@@ -1,0 +1,23 @@
+- name: Deploy NodeJS Web App
+  synchronize:
+    src: /home/mahlamusa/APPS/Docker/wordpress-nginx/web/
+    dest: /usr/share/nginx/html/
+  become: yes
+  become_user: root
+
+- name: Install PM2
+  npm:
+    name: pm2
+    global: yes
+    state: present
+
+- name: Install npm packages
+  command:
+    chdir: /usr/share/nginx/html
+    cmd: npm install
+
+- name: Run the App
+  command:
+    chdir: /usr/share/nginx/html
+    cmd: npm run serve
+

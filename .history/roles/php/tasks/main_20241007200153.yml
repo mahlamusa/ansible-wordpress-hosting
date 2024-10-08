@@ -1,0 +1,75 @@
+---
+- name: Add PHP repo
+  apt_repository:
+    repo: ppa:ondrej/php
+
+- name: Install PHP
+  apt:
+    name:
+      - "php8.3-bcmath"
+      - "php8.3-cli"
+      - "php8.3-common"
+      - "php8.3-curl"
+      - "php8.3-fpm"
+      - "php8.3-gd"
+      - "php8.3-igbinary"
+      - "php8.3-imagick"
+      - "php8.3-mbstring"
+      - "php8.3-mysql"
+      - "php8.3-opcache"
+      - "php8.3-redis"
+      - "php8.3-soap"
+      - "php8.3-xml"
+      - "php8.3-xmlrpc"
+      - "php8.3-zip"
+    state: present
+    force: yes
+    update_cache: yes
+
+- name: Set PHP user
+  lineinfile:
+    dest: /etc/php/8.3/fpm/pool.d/www.conf
+    regexp: "^user"
+    line: "user = {{ username }}"
+    state: present
+  notify: restart php
+
+- name: Set PHP group
+  lineinfile:
+    dest: /etc/php/8.3/fpm/pool.d/www.conf
+    regexp: "^group"
+    line: "group = {{ username }}"
+    state: present
+  notify: restart php
+
+- name: Set PHP listen owner
+  lineinfile:
+    dest: /etc/php/8.3/fpm/pool.d/www.conf
+    regexp: "^listen\\.owner"
+    line: "listen.owner = {{ username }}"
+    state: present
+  notify: restart php
+
+- name: Set PHP listen group
+  lineinfile:
+    dest: /etc/php/8.3/fpm/pool.d/www.conf
+    regexp: "^listen\\.group"
+    line: "listen.group = {{ username }}"
+    state: present
+  notify: restart php
+
+- name: Set PHP upload max filesize
+  lineinfile:
+    dest: /etc/php/8.3/fpm/php.ini
+    regexp: "^upload_max_filesize"
+    line: "upload_max_filesize = 128M"
+    state: present
+  notify: reload php
+
+- name: Set PHP post max filesize
+  lineinfile:
+    dest: /etc/php/8.3/fpm/php.ini
+    regexp: "^post_max_size"
+    line: "post_max_size = 128M"
+    state: present
+  notify: reload php

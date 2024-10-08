@@ -1,0 +1,17 @@
+---
+- hosts: dev
+  user: root
+  vars:
+    username: sitemanager
+  roles: 
+   - common
+   - ufw
+   - users
+   - nginx
+   - php
+   - mysql
+   - wp-cli
+   - ssh
+   - nodejs
+   - letsencrypt
+

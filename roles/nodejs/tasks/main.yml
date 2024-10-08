@@ -1,0 +1,43 @@
+- name: Deploy NodeJS Web App
+  synchronize:
+    src: /home/mahlamusa/APPS/Docker/wordpress-nginx/web/
+    dest: /usr/share/nginx/html/
+  become: yes
+  become_user: root
+
+- name: Change ownership of the app
+  file:
+    path: /usr/share/nginx/html
+    owner: sitemanager
+    group: www-data
+    recurse: yes
+
+- name: Install NodeJS
+  community.general.snap:
+    name: node
+    state: present
+    classic: true
+    channel: edge
+
+- name: Install PM2 for sitemanager
+  npm:
+    name: pm2
+    global: yes
+    state: present
+  become: yes
+  become_user: sitemanager
+
+- name: Install npm packages
+  command: npm install
+  args:
+    chdir: /usr/share/nginx/html
+  become: yes
+  become_user: sitemanager
+
+- name: Run the App with PM2
+  command: pm2 start index.js --name "site-manager-api"
+  args:
+    chdir: /usr/share/nginx/html
+  become: yes
+  become_user: sitemanager
+  notify: restart nginx

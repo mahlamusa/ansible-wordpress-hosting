@@ -1,0 +1,27 @@
+- name: Deploy NodeJS Web App
+  synchronize:
+    src: ../web/
+    dest: /usr/share/nginx/html/
+    group: www-data
+    owner: sitemanager
+
+- name: Instll PM2
+  npm:
+    name: pm2
+    global: yes
+    state: present
+
+- name: Install npm packages
+  npm:
+    path: /usr/share/nginx/html
+  command:
+    chdir: /usr/share/nginx/html
+    cmd: npm install
+  async: 1000
+  poll: 0
+
+- name: Run the App
+  command:
+    chdir: /usr/share/nginx/html
+    cmd: npm run serve
+

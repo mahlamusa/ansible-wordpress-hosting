@@ -1,0 +1,9 @@
+---
+- hosts: dev
+  user: root
+  become: true
+  become_user: root
+  roles: 
+   - common
+   - nginx
+   - users

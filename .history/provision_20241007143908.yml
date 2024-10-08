@@ -1,0 +1,12 @@
+---
+- hosts: dev
+  user: root
+  roles: 
+   - common
+   - ufw
+   - user
+   - nginx
+   - php
+   - mysql
+   - wp-cli
+   - ssh
