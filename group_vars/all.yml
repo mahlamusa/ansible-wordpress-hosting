@@ -1,0 +1,29 @@
+---
+# Account that nginx, PHP-FPM and the Node app run as.
+web_user: sitemanager
+
+# Admin accounts: key-only SSH login and passwordless sudo.
+admin_users:
+  - name: "{{ web_user }}"
+    public_key: "{{ lookup('ansible.builtin.file', '~/.ssh/id_ed25519.pub') }}"
+
+# Set to false only if you need root SSH access after provisioning.
+ssh_disable_root_login: true
+
+# Set to false where the firewall can't be managed (e.g. containers).
+ufw_enabled: true
+
+# PHP upload limits (nginx client_max_body_size is set in global/limits.conf).
+php_upload_max_filesize: 128M
+php_post_max_size: 128M
+
+# Let's Encrypt (used by certbot.yml).
+certbot_email: webmaster@conflated.co.za
+certbot_domains: []
+
+# Node app deployed by deploy.yml.
+node_app_name: site-manager-api
+node_app_src: ""
+node_app_dest: /usr/share/nginx/html
+node_app_port: 3000
+node_app_server_name: "{{ inventory_hostname }}"

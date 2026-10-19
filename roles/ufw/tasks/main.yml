@@ -1,12 +1,23 @@
 ---
-- name: Enable firewall
-  ufw: state=enabled policy=deny
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
 
-- name: Allow HTTP
-  ufw: rule=allow port=80 proto=tcp
+- name: Allow SSH, HTTP and HTTPS
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "22"
+    - "80"
+    - "443"
+  when: ufw_enabled | bool
 
-- name: Allow HTTPS
-  ufw: rule=allow port=443 proto=tcp
-
-- name: Allow SSH
-  ufw: rule=allow port=22 proto=tcp
+# Enabled last so the SSH rule exists before incoming traffic is denied.
+- name: Enable firewall with default deny
+  community.general.ufw:
+    state: enabled
+    policy: deny
+  when: ufw_enabled | bool

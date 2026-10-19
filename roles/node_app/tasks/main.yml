@@ -1,0 +1,78 @@
+---
+- name: Check the app source is set
+  ansible.builtin.assert:
+    that: node_app_src | length > 0
+    fail_msg: Set node_app_src to the local path of the Node app to deploy.
+
+- name: Copy the app
+  ansible.posix.synchronize:
+    src: "{{ node_app_src | regex_replace('/?$', '/') }}"
+    dest: "{{ node_app_dest }}/"
+    rsync_opts:
+      - --chown={{ web_user }}:www-data
+      - --omit-dir-times
+      - --exclude=node_modules
+      - --exclude=.git
+  register: node_app_sync
+
+- name: Install app dependencies
+  community.general.npm:
+    path: "{{ node_app_dest }}"
+  become: true
+  become_user: "{{ web_user }}"
+  register: node_app_npm
+
+- name: Set app ownership
+  ansible.builtin.file:
+    path: "{{ node_app_dest }}"
+    owner: "{{ web_user }}"
+    group: www-data
+    recurse: true
+
+- name: Check if the app is registered with PM2
+  ansible.builtin.command: pm2 describe {{ node_app_name }}
+  become: true
+  become_user: "{{ web_user }}"
+  register: node_app_pm2
+  changed_when: false
+  failed_when: false
+
+- name: Start the app with PM2
+  ansible.builtin.command: pm2 start index.js --name {{ node_app_name }}
+  args:
+    chdir: "{{ node_app_dest }}"
+  become: true
+  become_user: "{{ web_user }}"
+  when: node_app_pm2.rc != 0
+  changed_when: true
+  notify: Save pm2 process list
+
+- name: Reload the app after changes
+  ansible.builtin.command: pm2 reload {{ node_app_name }}
+  become: true
+  become_user: "{{ web_user }}"
+  when: node_app_pm2.rc == 0 and (node_app_sync is changed or node_app_npm is changed)
+  changed_when: true
+
+- name: Start PM2 on boot
+  ansible.builtin.command: pm2 startup systemd -u {{ web_user }} --hp /home/{{ web_user }}
+  args:
+    creates: /etc/systemd/system/pm2-{{ web_user }}.service
+
+- name: Configure the nginx site for the app
+  ansible.builtin.template:
+    src: node-app.conf.j2
+    dest: /etc/nginx/sites-available/{{ node_app_name }}
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Enable the nginx site for the app
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ node_app_name }}
+    dest: /etc/nginx/sites-enabled/{{ node_app_name }}
+    state: link
+  notify: Reload nginx
+
+- name: Validate nginx config
+  ansible.builtin.command: nginx -t
+  changed_when: false

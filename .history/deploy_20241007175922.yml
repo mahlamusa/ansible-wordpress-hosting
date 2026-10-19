@@ -1,6 +1,0 @@
----
-- hosts: dev
-  user: root
-  roles:
-   - common
-   - nodejs

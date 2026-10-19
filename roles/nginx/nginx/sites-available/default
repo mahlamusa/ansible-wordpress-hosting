@@ -1,44 +1,8 @@
-#The Nginx server instance
-upstream nodejs {
-  server 127.0.0.1:3000;
-}
-
+# Catch-all server block: requests for unknown hostnames get no response (444).
 server {
-  listen 80;
-  server_name 159.223.80.189;
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	server_name _;
 
-  location / {
-    proxy_pass http://nodejs;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_cache_bypass $http_upgrade;
-  }
-}
-
-server {
-  listen 80 default_server;
-  listen [::]:80 default_server;
-  server_name 159.223.80.189;
-
-  location / {
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Host $http_host;
-    proxy_set_header X-NginX-Proxy true;
-
-    proxy_pass http://127.0.0.1:3000/;
-    proxy_redirect off;
-  }
-
-  location /api {
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Host $http_host;
-    proxy_set_header X-NginX-Proxy true;
-
-    proxy_pass http://127.0.0.1:3000/api;
-    proxy_redirect off;
-  }
+	return 444;
 }

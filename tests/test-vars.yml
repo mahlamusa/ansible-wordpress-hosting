@@ -1,0 +1,7 @@
+---
+# Overrides used by tests/run.sh against the throwaway containers.
+admin_users:
+  - name: sitemanager
+    public_key: "{{ lookup('ansible.builtin.file', playbook_dir ~ '/tests/id_test.pub') }}"
+node_app_src: "{{ playbook_dir }}/tests/app"
+node_app_server_name: localhost

@@ -1,9 +1,0 @@
----
-- name: Update apt repo and cache
-  apt: update_cache=yes
-
-- name: Install NodeJS
-  apt:
-    name:
-      - nodejs
-      - npm

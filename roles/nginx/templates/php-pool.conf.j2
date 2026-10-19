@@ -1,0 +1,12 @@
+# Upstream to abstract backend connection(s) for PHP.
+# Additional upstreams can be added to /etc/nginx/upstreams/*.conf and then you just
+# change `default php{{ php_version | replace('.', '') }}` to whatever the new upstream is.
+upstream php{{ php_version | replace('.', '') }} {
+	server unix:/run/php/php{{ php_version }}-fpm.sock;
+}
+
+include /etc/nginx/upstreams/*.conf;
+
+map '' $upstream {
+	default php{{ php_version | replace('.', '') }};
+}

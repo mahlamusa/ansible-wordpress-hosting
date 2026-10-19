@@ -1,7 +1,0 @@
----
-- hosts: dev
-  user: root
-  become: yes
-  become_user: sitemanager
-  roles:
-   - nodejs

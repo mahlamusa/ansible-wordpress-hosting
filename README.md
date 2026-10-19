@@ -1,32 +1,59 @@
 # WordPress Ansible
 
-This repository contains a playbook for provisioning modern hosting environments geared towards WordPress. It's based on [How to Install WordPress on Ubuntu 20.04](https://deliciousbrains.com/hosting-wordpress-setup-secure-virtual-server/). The following is handled out of the box:
+Playbooks for provisioning a WordPress hosting server on **Ubuntu 24.04 LTS or 26.04 LTS**. Originally based on [How to Install WordPress on Ubuntu](https://deliciousbrains.com/hosting-wordpress-setup-secure-virtual-server/).
 
-* User setup
-* SSH hardening
-* Firewall setup
+Out of the box it handles:
 
-It will also install the following software:
+* Admin users with key-only SSH login and passwordless sudo
+* SSH hardening (no root login, no password login)
+* Firewall (ufw: only SSH, HTTP and HTTPS open)
 
-* Nginx with HTTP/2
-* PHP 8.1
-* MySQL
-* Redis
-* WP-CLI
-* Fail2Ban
-* Git
+And installs, from Ubuntu's own repositories:
+
+| Software | Ubuntu 24.04 | Ubuntu 26.04 |
+| --- | --- | --- |
+| Nginx | 1.24 | 1.28 |
+| PHP-FPM + WordPress extensions | 8.3 | 8.5 |
+| MySQL | 8.0 | 8.4 |
+| Redis | 7.0 | 8.0 |
+| Node.js + PM2 | 18 | 22 |
+| WP-CLI, Certbot, Fail2Ban, Git | ✓ | ✓ |
+
+## Requirements
+
+* ansible-core 2.18 or newer (tested with 2.21). Upgrade an older pipx install with `pipx upgrade ansible`.
+* The collections in `requirements.yml`:
+
+```
+ansible-galaxy collection install -r requirements.yml
+```
 
 ## Usage
 
-Configure your [hosts file](https://github.com/deliciousbrains/wordpress-ansible/blob/master/hosts).
+1. Add your server(s) to `hosts` under `[dev]`.
+2. Review `group_vars/all.yml`. At minimum, check `admin_users`. By default it creates `sitemanager` with your `~/.ssh/id_ed25519.pub` as its login key.
+3. Provision (the first run connects as root):
 
 ```
-[production]
-192.168.1.1 #sampledomain.com
+ansible-playbook provision.yml
 ```
 
-Edit [provision.yml](https://github.com/deliciousbrains/wordpress-ansible/blob/master/provision.yml) to configure your default user, [hashed](https://docs.ansible.com/ansible/latest/reference_appendices/faq.html#how-do-i-generate-encrypted-passwords-for-the-user-module) sudo password and local public key path. This will create a new user on the provisioned servers that you can use to gain SSH access.
+4. Root SSH login is now disabled. Change `ansible_user` in `hosts` to one of your admin users for later runs.
 
-Run:
+### Other playbooks
 
-`ansible-playbook provision.yml`
+| Playbook | What it does |
+| --- | --- |
+| `deploy.yml` | Copies a Node app from `node_app_src`, installs its dependencies, runs it with PM2 and proxies `node_app_server_name` to it through nginx. Example: `ansible-playbook deploy.yml -e node_app_src=~/path/to/app` |
+| `certbot.yml` | Gets Let's Encrypt certificates. Example: `ansible-playbook certbot.yml -e '{"certbot_domains":["example.com"]}'` |
+| `nginx.yml` | Re-applies the nginx and PHP configuration only. |
+| `users.yml` | Re-applies the admin users only. |
+
+## Testing
+
+`tests/run.sh` provisions fresh Ubuntu 24.04 and 26.04 containers, runs everything twice to check nothing changes on the second run, deploys a sample app, and checks the services. It uses rootless [Podman](https://podman.io/) so the containers can run systemd without root on your machine. Install it with `sudo apt install podman`.
+
+```
+python3 -m venv tests/.venv && tests/.venv/bin/pip install ansible-core ansible-lint
+tests/run.sh          # add --keep to leave the containers running
+```

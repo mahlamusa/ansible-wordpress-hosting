@@ -1,35 +1,51 @@
 ---
-- name: Add Nginx repo
-  apt_repository:
-    repo: ppa:ondrej/nginx
-
 - name: Install Nginx
-  apt:
+  ansible.builtin.apt:
     name: nginx
     state: present
-    force: yes
-    update_cache: yes
 
-- name: Backup nginx directory
-  shell: mv /etc/nginx /etc/nginx.bak.$(date +%Y%m%d%H%M%S)
-    
+- name: Back up the original nginx directory once
+  ansible.builtin.command: cp -a /etc/nginx /etc/nginx.orig
+  args:
+    creates: /etc/nginx.orig
+
 - name: Copy nginx config
-  synchronize:
-    src: ../nginx/
+  ansible.builtin.copy:
+    src: "{{ role_path }}/nginx/"
     dest: /etc/nginx/
-  notify: reload nginx
+    mode: preserve
+  notify: Reload nginx
+
+- name: Create upstreams directory
+  ansible.builtin.file:
+    path: /etc/nginx/upstreams
+    state: directory
+    mode: "0755"
+
+- name: Configure nginx and the PHP upstream
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: nginx.conf.j2, dest: /etc/nginx/nginx.conf }
+    - { src: php-pool.conf.j2, dest: /etc/nginx/global/php-pool.conf }
+  notify: Restart nginx
 
 - name: Symlink default site
-  file:
+  ansible.builtin.file:
     src: /etc/nginx/sites-available/default
     dest: /etc/nginx/sites-enabled/default
     state: link
-  notify: reload nginx
+    force: true
+  notify: Reload nginx
 
-- name: Set Nginx user
-  lineinfile:
-    dest: /etc/nginx/nginx.conf
-    regexp: "^user"
-    line: "user {{ username }};"
-    state: present
-  notify: restart nginx
+- name: Validate nginx config
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+- name: Enable Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true

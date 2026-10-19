@@ -1,1 +1,7 @@
-provision.retry
+*.retry
+.history/
+tests/.venv/
+tests/id_test
+tests/id_test.pub
+tests/*.log
+collections/

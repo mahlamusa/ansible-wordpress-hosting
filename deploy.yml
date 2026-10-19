@@ -1,7 +1,6 @@
 ---
-- hosts: dev
-  user: root
-  become: yes
+- name: Deploy the Node app
+  hosts: dev
+  become: true
   roles:
-   - common
-   - nodejs
+    - node_app

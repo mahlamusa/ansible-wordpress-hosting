@@ -1,20 +1,30 @@
 ---
 - name: Upgrade packages
-  apt:
+  ansible.builtin.apt:
     upgrade: safe
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 300
-  become: yes
 
-- name: Install packages
-  apt:
+- name: Install base packages
+  ansible.builtin.apt:
     name:
-      - aptitude
-      - jq
-      - curl
-      - git-core
+      - acl
       - at
-      - nodejs
-      - npm
+      - ca-certificates
+      - curl
+      - fail2ban
+      - git
+      - jq
+      - redis-server
+      - rsync
+      - unzip
     state: present
-    update_cache: yes
+
+- name: Enable base services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - fail2ban
+    - redis-server

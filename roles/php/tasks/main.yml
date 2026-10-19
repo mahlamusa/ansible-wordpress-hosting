@@ -1,75 +1,61 @@
 ---
-- name: Add PHP repo
-  apt_repository:
-    repo: ppa:ondrej/php
-
 - name: Install PHP
-  apt:
+  ansible.builtin.apt:
     name:
-      - "php8.3-bcmath"
-      - "php8.3-cli"
-      - "php8.3-common"
-      - "php8.3-curl"
-      - "php8.3-fpm"
-      - "php8.3-gd"
-      - "php8.3-igbinary"
-      - "php8.3-imagick"
-      - "php8.3-mbstring"
-      - "php8.3-mysql"
-      - "php8.3-opcache"
-      - "php8.3-redis"
-      - "php8.3-soap"
-      - "php8.3-xml"
-      - "php8.3-xmlrpc"
-      - "php8.3-zip"
+      - php-bcmath
+      - php-cli
+      - php-common
+      - php-curl
+      - php-fpm
+      - php-gd
+      - php-igbinary
+      - php-imagick
+      - php-intl
+      - php-mbstring
+      - php-mysql
+      - php-redis
+      - php-soap
+      - php-xml
+      - php-xmlrpc
+      - php-zip
     state: present
-    force: yes
-    update_cache: yes
 
-- name: Set PHP user
-  lineinfile:
-    dest: /etc/php/8.3/fpm/pool.d/www.conf
-    regexp: "^user"
-    line: "user = {{ username }}"
-    state: present
-  notify: restart php
+# Ubuntu ships one PHP version per release (8.3 on 24.04, 8.5 on 26.04).
+- name: Detect PHP version
+  ansible.builtin.command: php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;'
+  register: php_version_cmd
+  changed_when: false
 
-- name: Set PHP group
-  lineinfile:
-    dest: /etc/php/8.3/fpm/pool.d/www.conf
-    regexp: "^group"
-    line: "group = {{ username }}"
-    state: present
-  notify: restart php
+- name: Set PHP version fact
+  ansible.builtin.set_fact:
+    php_version: "{{ php_version_cmd.stdout }}"
 
-- name: Set PHP listen owner
-  lineinfile:
-    dest: /etc/php/8.3/fpm/pool.d/www.conf
-    regexp: "^listen\\.owner"
-    line: "listen.owner = {{ username }}"
+- name: Set PHP-FPM pool user and group
+  ansible.builtin.lineinfile:
+    dest: "/etc/php/{{ php_version }}/fpm/pool.d/www.conf"
+    regexp: "^{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
     state: present
-  notify: restart php
+  loop:
+    - { key: user, value: "{{ web_user }}" }
+    - { key: group, value: "{{ web_user }}" }
+    - { key: listen.owner, value: "{{ web_user }}" }
+    - { key: listen.group, value: "{{ web_user }}" }
+  notify: Restart php
 
-- name: Set PHP listen group
-  lineinfile:
-    dest: /etc/php/8.3/fpm/pool.d/www.conf
-    regexp: "^listen\\.group"
-    line: "listen.group = {{ username }}"
+- name: Set PHP upload limits
+  ansible.builtin.lineinfile:
+    dest: "/etc/php/{{ php_version }}/fpm/php.ini"
+    regexp: "^;?{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
     state: present
-  notify: restart php
+  loop:
+    - { key: upload_max_filesize, value: "{{ php_upload_max_filesize }}" }
+    - { key: post_max_size, value: "{{ php_post_max_size }}" }
+  notify: Reload php
 
-- name: Set PHP upload max filesize
-  lineinfile:
-    dest: /etc/php/8.3/fpm/php.ini
-    regexp: "^upload_max_filesize"
-    line: "upload_max_filesize = 128M"
-    state: present
-  notify: reload php
-
-- name: Set PHP post max filesize
-  lineinfile:
-    dest: /etc/php/8.3/fpm/php.ini
-    regexp: "^post_max_size"
-    line: "post_max_size = 128M"
-    state: present
-  notify: reload php
+- name: Enable PHP-FPM
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
+    state: started
+    enabled: true

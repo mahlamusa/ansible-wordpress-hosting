@@ -1,17 +1,15 @@
 ---
-- hosts: dev
-  user: root
-  vars:
-    username: sitemanager
-  roles: 
-   - common
-   - ufw
-   - users
-   - nginx
-   - php
-   - mysql
-   - wp-cli
-   - ssh
-   - nodejs
-   - letsencrypt
-
+- name: Provision WordPress hosting server
+  hosts: dev
+  become: true
+  roles:
+    - common
+    - users
+    - ufw
+    - php
+    - nginx
+    - mysql
+    - wp_cli
+    - nodejs
+    - letsencrypt
+    - ssh

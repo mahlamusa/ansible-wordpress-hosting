@@ -1,7 +1,0 @@
----
-- hosts: dev
-  user: root
-  become: yes
-  roles:
-   - common
-   - nodejs

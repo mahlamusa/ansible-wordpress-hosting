@@ -1,19 +1,17 @@
 ---
 - name: Get certificates for given hostnames
-- hosts: dev
-  user: root
-  become: yes
-  roles:
-   - common
-   - nodejs
+  hosts: dev
+  become: true
   tasks:
+    - name: Check certbot_domains is set
+      ansible.builtin.assert:
+        that: certbot_domains | length > 0
+        fail_msg: Set certbot_domains, e.g. -e '{"certbot_domains":["example.com"]}'
+
     - name: Get certificates for hostnames
-      command: '/usr/local/bin/certbot -n --nginx certonly -d {{ item }}'
+      ansible.builtin.command: >-
+        certbot certonly --nginx --non-interactive --agree-tos
+        --email {{ certbot_email }} -d {{ item }}
       args:
-        creates: '/etc/letsencrypt/live/{{ item }}'
-      ignore_errors: true
-      tags:
-        - nginx
-        - certbot
-      with_items:
-        - host1.conflated.co.za
+        creates: /etc/letsencrypt/live/{{ item }}
+      loop: "{{ certbot_domains }}"

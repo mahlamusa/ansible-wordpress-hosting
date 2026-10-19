@@ -1,7 +1,0 @@
----
-- hosts: dev
-  user: root
-  vars:
-    username: sitemanager
-  roles: 
-   - nginx

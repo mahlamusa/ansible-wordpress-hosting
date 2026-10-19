@@ -1,7 +1,7 @@
 ---
-- hosts: dev
-  user: root
-  vars:
-    username: sitemanager
-  roles: 
-   - nginx
+- name: Configure nginx
+  hosts: dev
+  become: true
+  roles:
+    - php
+    - nginx

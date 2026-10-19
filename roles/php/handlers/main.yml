@@ -1,15 +1,10 @@
 ---
-- name: start php
-  service:
-    name: php8.3-fpm
-    state: started
-
-- name: reload php
-  service:
-    name: php8.3-fpm
+- name: Reload php
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
     state: reloaded
 
-- name: restart php
-  service:
-    name: php8.3-fpm
+- name: Restart php
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
     state: restarted

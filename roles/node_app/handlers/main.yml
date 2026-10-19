@@ -1,0 +1,11 @@
+---
+- name: Save pm2 process list
+  ansible.builtin.command: pm2 save
+  become: true
+  become_user: "{{ web_user }}"
+  changed_when: true
+
+- name: Reload nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded

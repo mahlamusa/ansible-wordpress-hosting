@@ -1,5 +1,0 @@
----
-- hosts: dev
-  user: root
-  roles:
-   - nodejs

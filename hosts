@@ -1,2 +1,7 @@
+# First run connects as root. After provision.yml disables root SSH login,
+# change ansible_user to one of the admin_users from group_vars/all.yml.
 [dev]
 159.223.80.189
+
+[dev:vars]
+ansible_user=root
